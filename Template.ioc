@@ -1,24 +1,31 @@
 #MicroXplorer Configuration settings - do not modify
-#Fri Apr 17 15:35:22 MSK 2015
+#Sat Jul 11 15:05:40 MSK 2015
 File.Version=5
 KeepUserPlacement=false
 Mcu.Family=STM32F1
 Mcu.IP0=NVIC
 Mcu.IP1=RCC
-Mcu.IPNb=2
+Mcu.IP2=USART1
+Mcu.IPNb=3
 Mcu.Name=STM32F103C(4-6)Tx
 Mcu.Package=LQFP48
 Mcu.Pin0=PD0-OSC_IN
 Mcu.Pin1=PD1-OSC_OUT
 Mcu.Pin2=PA8
-Mcu.PinsNb=3
+Mcu.Pin3=PA9
+Mcu.Pin4=PA10
+Mcu.PinsNb=5
 Mcu.UserName=STM32F103C6Tx
 MxCube.Version=4.6.0
 MxDb.Version=DB.4.0.60
 NVIC.PriorityGroup=NVIC_PRIORITYGROUP_4
 NVIC.SysTick_IRQn=true\:0\:0\:false
+PA10.Mode=Asynchronous
+PA10.Signal=USART1_RX
 PA8.Locked=true
 PA8.Signal=GPIO_Output
+PA9.Mode=Asynchronous
+PA9.Signal=USART1_TX
 PCC.Family=STM32F1
 PCC.MCU=STM32F103C(4-6)Tx
 PCC.MXVersion=4.6.0
@@ -61,7 +68,7 @@ RCC.FCLKCortexFreq_Value=72000000
 RCC.FamilyName=M
 RCC.HCLKFreq_Value=72000000
 RCC.HSIState=RCC_HSI_ON
-RCC.IPParameters=HCLKFreq_Value,SYSCLKFreq_VALUE,FamilyName,PLLCLKFreq_Value,USBFreq_Value,PLLMCOFreq_Value,SYSCLKSource,FCLKCortexFreq_Value,APB1CLKDivider,PLLSourceVirtual,APB2Freq_Value,APB2TimFreq_Value,PLLMUL,VCOOutput2Freq_Value,MCOFreq_Value,HSIState,ADCFreqValue,APB1Freq_Value,APB1TimFreq_Value,AHBFreq_Value,TimSysFreq_Value
+RCC.IPParameters=HCLKFreq_Value,SYSCLKFreq_VALUE,PLLCLKFreq_Value,FamilyName,USBFreq_Value,PLLMCOFreq_Value,SYSCLKSource,APB1CLKDivider,FCLKCortexFreq_Value,PLLSourceVirtual,APB2Freq_Value,APB2TimFreq_Value,PLLMUL,VCOOutput2Freq_Value,MCOFreq_Value,HSIState,ADCFreqValue,APB1TimFreq_Value,APB1Freq_Value,AHBFreq_Value,TimSysFreq_Value
 RCC.MCOFreq_Value=72000000
 RCC.PLLCLKFreq_Value=72000000
 RCC.PLLMCOFreq_Value=36000000
