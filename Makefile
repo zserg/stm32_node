@@ -50,7 +50,8 @@ RTOSSRCDIR = ./Middlewares/Third_Party/FreeRTOS/Source
 SRC  = ./Src/main.c
 SRC += ./Src/stm32f1xx_it.c
 SRC += ./Src/stm32f1xx_hal_msp.c
-#SRC += ./stm32fonewire/tm_stm32f4_onewire.c
+SRC += ./stm32fonewire/tm_stm32f4_onewire.c
+SRC += ./stm32fonewire/tm_stm32f4_ds18b20.c
 #SRC += ./Src/freertos.c
 #SRC += ./Src/usb_device.c
 #SRC += ./Src/usbd_conf.c
@@ -69,8 +70,8 @@ SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_gpio.c
 SRC += $(STMSPSRCDDIR)/stm32f1xx_hal.c
 SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_cortex.c
 SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_rcc.c
-#SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_tim.c
-#SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_tim_ex.c
+SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_tim.c
+SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_tim_ex.c
 SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_dma.c
 SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_uart.c
 SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_can.c
@@ -109,6 +110,7 @@ INCDIRS = $(DEVDIR)/Include \
 	  $(LIBSDIRS)/STM32F1xx_HAL_Driver/Inc \
 	  $(CORELIBDIR) \
           $(STMSPINCDDIR) \
+	  ./stm32fonewire \
           ./Inc
 # List the user directory to look for the libraries here
 LIBDIRS += $(LIBSDIRS)

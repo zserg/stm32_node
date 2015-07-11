@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * File Name          : main.c
-  * Date               : 11/07/2015 15:05:42
+  * Date               : 11/07/2015 15:48:09
   * Description        : Main program body
   ******************************************************************************
   *
@@ -37,19 +37,25 @@
 
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
+#include "tm_stm32f4_onewire.h"
+#include "tm_stm32f4_ds18b20.h"
 
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim2;
+
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
+TM_OneWire_t OneWire;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN PFP */
@@ -60,6 +66,7 @@ static void MX_USART1_UART_Init(void);
  #else
  #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
 #endif /* __GNUC__ */
+void tm_delay(uint16_t us);
 
 /* USER CODE END PFP */
 
@@ -71,6 +78,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+uint8_t devices, i, j, count, device[2][8];
+uint16_t temps;
 
   /* USER CODE END 1 */
 
@@ -84,11 +93,74 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_TIM2_Init();
   MX_USART1_UART_Init();
 
   /* USER CODE BEGIN 2 */
-printf("\n\r UART Printf Example: retarget the C library printf function to the UART\n\r");
-printf("** Test finished successfully. ** \n\r");
+    if (HAL_TIM_Base_Start(&htim2) != HAL_OK)
+       {
+         /* Starting Error */
+         while(1){
+         printf("**  Error \n\r");
+         }
+       }
+    printf("\n\r UART Printf Example: retarget the C library printf function to the UART\n\r");
+    printf("** Test finished successfully. ** \n\r");
+  printf("cp0\n");
+  TM_OneWire_Init(&OneWire, GPIOB, GPIO_PIN_11);
+
+  TM_OneWire_ReadBit(&OneWire);
+  devices = TM_OneWire_First(&OneWire);
+  count = 0;
+  printf("cp1\n");
+  while (devices) {
+  /* Increase count variable */
+  count++;
+
+  /* Get full 8-bytes rom address */
+  TM_OneWire_GetFullROM(&OneWire, device[count - 1]);
+
+  /* Check for new device */
+  devices = TM_OneWire_Next(&OneWire);
+  }
+printf("cp2\n");
+
+  /* If any devices on 1-wire */
+  if (count > 0) {
+     printf("Devices found on 1-wire instance: %d\n\r", count);
+
+  /* Display 64bit rom code */
+  for (j = 0; j < count; j++) {
+    for (i = 0; i < 8; i++) {
+       printf("0x%02X ", device[j][i]);
+      }
+  }
+  } else {
+  /* Nothing on OneWire */
+    printf("No devices on OneWire.\n\r");
+  }
+  //   i = TM_OneWire_Reset(&OneWire);
+     printf ("i=%d\n\r",i);
+     
+     if (TM_DS18B20_Is(device[0])) {
+         printf("Device is DS18B20\n\r");
+     } else {
+         printf("Device is not DS18B20\n\r");
+     }
+
+  //   TM_DS18B20_SetResolution(&OneWire, device[0], TM_DS18B20_Resolution_12bits);
+
+     TM_DS18B20_Start(&OneWire, device[0]);
+     while (!TM_DS18B20_AllDone(&OneWire));
+     printf("All done\n");
+     if (TM_DS18B20_Read(&OneWire, device[0], &temps)) {
+         /* Print temperature */
+         printf("Temp %d: %3.5f; \n\r", 0, temps);
+         printf("Temp %d: %x; \n\r", 0, temps);
+     } else {
+      /* Reading error */
+        printf("Reading error;\n\r");
+     }
 
   /* USER CODE END 2 */
 
@@ -133,6 +205,29 @@ void SystemClock_Config(void)
 
 }
 
+/* TIM2 init function */
+void MX_TIM2_Init(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 71;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = -1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  HAL_TIM_Base_Init(&htim2);
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig);
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig);
+
+}
+
 /* USART1 init function */
 void MX_USART1_UART_Init(void)
 {
@@ -163,7 +258,15 @@ void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __GPIOD_CLK_ENABLE();
+  __GPIOB_CLK_ENABLE();
   __GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin : PB11 */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
+  GPIO_InitStruct.Pin = GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA8 */
   GPIO_InitStruct.Pin = GPIO_PIN_8;
@@ -187,6 +290,15 @@ void MX_GPIO_Init(void)
 
   return ch;
  }
+
+void tm_delay(uint16_t us)
+{
+  uint16_t i;
+  uint16_t start = TIM2->CNT;
+  do { } while((TIM2->CNT - start) < us);
+  i = TIM2->CNT;
+  //printf("start=%d, i=%d \n\r",start,i);
+}
 
 /* USER CODE END 4 */
 
