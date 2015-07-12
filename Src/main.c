@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * File Name          : main.c
-  * Date               : 11/07/2015 15:48:09
+  * Date               : 11/07/2015 18:05:13
   * Description        : Main program body
   ******************************************************************************
   *
@@ -60,13 +60,14 @@ static void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN PFP */
 #ifdef __GNUC__
-/* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
-    set to 'Yes') calls __io_putchar() */
+      /* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
+          set to 'Yes') calls __io_putchar() */
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
- #else
- #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+       #else
+       #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
 #endif /* __GNUC__ */
-void tm_delay(uint16_t us);
+
+ void tm_delay(uint16_t us);
 
 /* USER CODE END PFP */
 
@@ -79,7 +80,8 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 uint8_t devices, i, j, count, device[2][8];
-uint16_t temps;
+float temps;
+uint16_t raw_temp;
 
   /* USER CODE END 1 */
 
@@ -97,22 +99,20 @@ uint16_t temps;
   MX_USART1_UART_Init();
 
   /* USER CODE BEGIN 2 */
-    if (HAL_TIM_Base_Start(&htim2) != HAL_OK)
+
+  if (HAL_TIM_Base_Start(&htim2) != HAL_OK)
        {
          /* Starting Error */
          while(1){
          printf("**  Error \n\r");
          }
        }
-    printf("\n\r UART Printf Example: retarget the C library printf function to the UART\n\r");
-    printf("** Test finished successfully. ** \n\r");
-  printf("cp0\n");
-  TM_OneWire_Init(&OneWire, GPIOB, GPIO_PIN_11);
+  /* One Wire Initialization and devices search */ 
 
+  TM_OneWire_Init(&OneWire, GPIOB, GPIO_PIN_11);
   TM_OneWire_ReadBit(&OneWire);
   devices = TM_OneWire_First(&OneWire);
   count = 0;
-  printf("cp1\n");
   while (devices) {
   /* Increase count variable */
   count++;
@@ -123,55 +123,59 @@ uint16_t temps;
   /* Check for new device */
   devices = TM_OneWire_Next(&OneWire);
   }
-printf("cp2\n");
 
   /* If any devices on 1-wire */
   if (count > 0) {
      printf("Devices found on 1-wire instance: %d\n\r", count);
 
-  /* Display 64bit rom code */
-  for (j = 0; j < count; j++) {
-    for (i = 0; i < 8; i++) {
-       printf("0x%02X ", device[j][i]);
-      }
-  }
+     /* Display 64bit rom code */
+     for (j = 0; j < count; j++) {
+        for (i = 0; i < 8; i++) {
+           printf("0x%02X ", device[j][i]);
+        }
+     }
   } else {
   /* Nothing on OneWire */
     printf("No devices on OneWire.\n\r");
   }
   //   i = TM_OneWire_Reset(&OneWire);
-     printf ("i=%d\n\r",i);
      
      if (TM_DS18B20_Is(device[0])) {
          printf("Device is DS18B20\n\r");
-     } else {
-         printf("Device is not DS18B20\n\r");
+     } else if (TM_DS18S20_Is(device[0])) {
+         printf("Device is DS18S20\n\r");
+     } else {    
+         printf("Device is not DS18B20 or DS18S20\n\r");
      }
 
-  //   TM_DS18B20_SetResolution(&OneWire, device[0], TM_DS18B20_Resolution_12bits);
 
-     TM_DS18B20_Start(&OneWire, device[0]);
-     while (!TM_DS18B20_AllDone(&OneWire));
-     printf("All done\n");
-     if (TM_DS18B20_Read(&OneWire, device[0], &temps)) {
-         /* Print temperature */
-         printf("Temp %d: %3.5f; \n\r", 0, temps);
-         printf("Temp %d: %x; \n\r", 0, temps);
-     } else {
-      /* Reading error */
-        printf("Reading error;\n\r");
-     }
 
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN 3 */
   /* Infinite loop */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
   while (1)
   {
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 	HAL_Delay(100);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 	HAL_Delay(2000);
+     
+        /* Temperature Measurements */
+        TM_DS18B20_Start(&OneWire, device[0]);
+        while (!TM_DS18B20_AllDone(&OneWire));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+        
+        if (TM_DS18B20_Read(&OneWire, device[0], &temps, &raw_temp)) {
+             /* Print temperature */
+             printf("Raw Temp: 0x%2x (%02d C);\n\r", raw_temp, raw_temp>>1);
+         } else {
+          /* Reading error */
+             printf("Raw Temp: 0xff;\n\r");
+         }
 
   }
   /* USER CODE END 3 */
@@ -215,7 +219,7 @@ void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 71;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = -1;
+  htim2.Init.Period = 65535;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   HAL_TIM_Base_Init(&htim2);
 
@@ -258,21 +262,20 @@ void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __GPIOD_CLK_ENABLE();
-  __GPIOB_CLK_ENABLE();
   __GPIOA_CLK_ENABLE();
+  __GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pins : PA4 PA8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_8|GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB11 */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
   GPIO_InitStruct.Pin = GPIO_PIN_11;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 
@@ -293,11 +296,9 @@ void MX_GPIO_Init(void)
 
 void tm_delay(uint16_t us)
 {
-  uint16_t i;
-  uint16_t start = TIM2->CNT;
-  do { } while((TIM2->CNT - start) < us);
-  i = TIM2->CNT;
-  //printf("start=%d, i=%d \n\r",start,i);
+  uint16_t start;
+  start  = (TIM2->CNT);
+  do { } while((uint16_t)(TIM2->CNT - start) < us);
 }
 
 /* USER CODE END 4 */
