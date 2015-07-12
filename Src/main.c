@@ -187,7 +187,7 @@ uint16_t raw_temp;
          }
 
         /* Distance maasurement */
-           printf("Distance: %08d (us);\n\r",TM_HCSR04_Read(&HCSR04));
+           printf("Distance: %08d (us) INFO: 58us per 1 cm;\n\r",TM_HCSR04_Read(&HCSR04));
   }
   /* USER CODE END 3 */
 
