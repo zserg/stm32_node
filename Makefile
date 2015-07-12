@@ -52,6 +52,7 @@ SRC += ./Src/stm32f1xx_it.c
 SRC += ./Src/stm32f1xx_hal_msp.c
 SRC += ./stm32fonewire/tm_stm32f4_onewire.c
 SRC += ./stm32fonewire/tm_stm32f4_ds18b20.c
+SRC += ./stm32f_hcsr04/tm_stm32f4_hcsr04.c
 #SRC += ./Src/freertos.c
 #SRC += ./Src/usb_device.c
 #SRC += ./Src/usbd_conf.c
@@ -110,6 +111,7 @@ INCDIRS = $(DEVDIR)/Include \
 	  $(LIBSDIRS)/STM32F1xx_HAL_Driver/Inc \
 	  $(CORELIBDIR) \
           $(STMSPINCDDIR) \
+	  ./stm32f_hcsr04 \
 	  ./stm32fonewire \
           ./Inc
 # List the user directory to look for the libraries here

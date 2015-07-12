@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * File Name          : main.c
-  * Date               : 11/07/2015 18:05:13
+  * Date               : 12/07/2015 17:11:18
   * Description        : Main program body
   ******************************************************************************
   *
@@ -39,7 +39,7 @@
 #include "stdio.h"
 #include "tm_stm32f4_onewire.h"
 #include "tm_stm32f4_ds18b20.h"
-
+#include "tm_stm32f4_hcsr04.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -49,6 +49,7 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 TM_OneWire_t OneWire;
+TM_HCSR04_t HCSR04;
 
 /* USER CODE END PV */
 
@@ -148,6 +149,13 @@ uint16_t raw_temp;
          printf("Device is not DS18B20 or DS18S20\n\r");
      }
 
+   /* distance sensor initialization on pins: */
+   if (TM_HCSR04_Init(&HCSR04, GPIOB, GPIO_PIN_7, GPIOB, GPIO_PIN_6)) {
+      printf("Distance sensor is OK!\n\r");
+   }else{
+      printf("Distance sensor is FAILED!\n\r");
+   }   
+
 
 
   /* USER CODE END 2 */
@@ -164,6 +172,7 @@ uint16_t raw_temp;
 	HAL_Delay(2000);
      
         /* Temperature Measurements */
+  
         TM_DS18B20_Start(&OneWire, device[0]);
         while (!TM_DS18B20_AllDone(&OneWire));
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
@@ -171,12 +180,14 @@ uint16_t raw_temp;
         
         if (TM_DS18B20_Read(&OneWire, device[0], &temps, &raw_temp)) {
              /* Print temperature */
-             printf("Raw Temp: 0x%2x (%02d C);\n\r", raw_temp, raw_temp>>1);
+             printf("Raw Temp: 0x%2x (%02d C);  ", raw_temp, raw_temp>>1);
          } else {
           /* Reading error */
-             printf("Raw Temp: 0xff;\n\r");
+             printf("Raw Temp: 0xff;  ");
          }
 
+        /* Distance maasurement */
+           printf("Distance: %08d (us);\n\r",TM_HCSR04_Read(&HCSR04));
   }
   /* USER CODE END 3 */
 
@@ -265,16 +276,28 @@ void MX_GPIO_Init(void)
   __GPIOA_CLK_ENABLE();
   __GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pins : PA4 PA8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_8|GPIO_PIN_3;
+  /*Configure GPIO pins : PA3 PA4 PA8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PB11 */
+  /*Configure GPIO pins : PB11 */
   GPIO_InitStruct.Pin = GPIO_PIN_11;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_MEDIUM;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
