@@ -18,5 +18,8 @@ Board measures temperature and distance and send the following information to UA
 Raw Temp: 0x18 (24 C);  Distance: 1234567 (us) INFO: 58us per 1 cm;
 </code>
 
+#### Toolchain
+[https://github.com/zserg/stm32_tools](https://github.com/zserg/stm32_tools)
+
 
 
