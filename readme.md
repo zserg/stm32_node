@@ -2,7 +2,7 @@ stm32_node
 ==========
 
 Control node based on STM32F103C8TC board (image below)
-![board](https://github.com/zserg/stm32_node/Doc/stm32f103_brd.jpg)
+![board](https://github.com/zserg/stm32_node/blob/master/Doc/stm32f103_brd.jpg)
 
 
 Configuration:
