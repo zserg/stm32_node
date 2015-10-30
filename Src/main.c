@@ -46,6 +46,8 @@
 TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart2;
+IWDG_HandleTypeDef IwdgHandle;
 
 /* USER CODE BEGIN PV */
 TM_OneWire_t OneWire;
@@ -58,6 +60,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_USART2_UART_Init(void);
 
 /* USER CODE BEGIN PFP */
 #ifdef __GNUC__
@@ -80,7 +83,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-uint8_t devices, i, j, count, device[2][8];
+uint8_t devices, i, j, count, device[2][8], status;
 float temps;
 uint16_t raw_temp;
 
@@ -98,6 +101,12 @@ uint16_t raw_temp;
   MX_GPIO_Init();
   MX_TIM2_Init();
   MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
+  IwdgHandle.Instance = IWDG;
+  IwdgHandle.Init.Prescaler = IWDG_PRESCALER_256;
+  IwdgHandle.Init.Reload    = 0xfff;
+  HAL_IWDG_Init(&IwdgHandle);
+  HAL_IWDG_Start(&IwdgHandle);
 
   /* USER CODE BEGIN 2 */
 
@@ -134,60 +143,46 @@ uint16_t raw_temp;
         for (i = 0; i < 8; i++) {
            printf("0x%02X ", device[j][i]);
         }
+        printf("\n\r");
      }
+    printf("\n\r");
   } else {
   /* Nothing on OneWire */
     printf("No devices on OneWire.\n\r");
   }
   //   i = TM_OneWire_Reset(&OneWire);
      
-     if (TM_DS18B20_Is(device[0])) {
-         printf("Device is DS18B20\n\r");
-     } else if (TM_DS18S20_Is(device[0])) {
-         printf("Device is DS18S20\n\r");
-     } else {    
-         printf("Device is not DS18B20 or DS18S20\n\r");
-     }
-
-   /* distance sensor initialization on pins: */
-   if (TM_HCSR04_Init(&HCSR04, GPIOB, GPIO_PIN_7, GPIOB, GPIO_PIN_6)) {
-      printf("Distance sensor is OK!\n\r");
-   }else{
-      printf("Distance sensor is FAILED!\n\r");
-   }   
-
 
 
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN 3 */
   /* Infinite loop */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
   while (1)
   {
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 	HAL_Delay(100);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-	HAL_Delay(2000);
-     
+	HAL_Delay(10000);
+        status = 1;   
         /* Temperature Measurements */
-  
-        TM_DS18B20_Start(&OneWire, device[0]);
+        TM_DS18B20_StartAll(&OneWire);
         while (!TM_DS18B20_AllDone(&OneWire));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-        
-        if (TM_DS18B20_Read(&OneWire, device[0], &temps, &raw_temp)) {
+        for(i=0;i<count;i++)
+        {
+        if (TM_DS18B20_Read(&OneWire, device[i], &temps, &raw_temp)) {
+            for(j=0;j<8;j++) printf("%02X:",device[i][j]);
              /* Print temperature */
-             printf("Raw Temp: 0x%2x (%02d C);  ", raw_temp, raw_temp>>1);
+             printf(" - Temp: 0x%04X (%04d C);\n\r", raw_temp, raw_temp>>4);
          } else {
           /* Reading error */
-             printf("Raw Temp: 0xff;  ");
+             printf("(%d) Raw Temp: 0xff;\n\r",i);
+             status = 0;
          }
+        }
+        if(status) HAL_IWDG_Refresh(&IwdgHandle);
 
-        /* Distance maasurement */
-           printf("Distance: %08d (us) INFO: 58us per 1 cm;\n\r",TM_HCSR04_Read(&HCSR04));
   }
   /* USER CODE END 3 */
 
@@ -258,6 +253,22 @@ void MX_USART1_UART_Init(void)
   HAL_UART_Init(&huart1);
 
 }
+/* USART2 init function */ 
+void MX_USART2_UART_Init(void)
+ {
+
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 38400;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  HAL_UART_Init(&huart2);
+
+ }
+
 
 /** Configure pins as 
         * Analog 
@@ -299,6 +310,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET); // USART2 (rs485) tx enable
 
 }
 
@@ -312,7 +325,7 @@ void MX_GPIO_Init(void)
  {
    /* Place your implementation of fputc here */
    /* e.g. write a character to the USART1 and Loop until the end of transmission */
-   HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+   HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF);
 
   return ch;
  }

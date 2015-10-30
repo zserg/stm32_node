@@ -34,10 +34,8 @@ DDEFS = -D$(DEVICE) -DUSE_STDPERIPH_DRIVER -DGCC_ARMCM3
 PROJECT        = main
  
 # List C source files here
-#LIBSDIRS    = $(STM32CUBEROOT)/Drivers
-LIBSDIRS    = ../../STM32Cube_FW_F1_V1.0.0/Drivers
+LIBSDIRS    = $(STM32CUBEROOT)/Drivers
 CORELIBDIR = $(LIBSDIRS)/CMSIS/Include
-RTOSLIBDIR = ./Middlewares/Third_Party/FreeRTOS/Source/include
 DEVDIR  = $(LIBSDIRS)/CMSIS/Device/ST/STM32F1xx
 STMSPDDIR    = $(LIBSDIRS)/STM32F1xx_HAL_Driver
 STMSPSRCDDIR = $(STMSPDDIR)/Src
@@ -76,6 +74,7 @@ SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_tim_ex.c
 SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_dma.c
 SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_uart.c
 SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_can.c
+SRC += $(STMSPSRCDDIR)/stm32f1xx_hal_iwdg.c
 
 SRC += $(DEVDIR)/Source/Templates/system_stm32f1xx.c
 #SRC += $(RTOSSRCDIR)/CMSIS_RTOS/cmsis_os.c
